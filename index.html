@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>关于本机 截图生成器（无状态栏）</title>
+  <style>
+    :root{
+      --bg:#f2f2f7;
+      --card:#ffffff;
+      --sep:rgba(60,60,67,.12);
+      --text:#1c1c1e;
+      --value:rgba(60,60,67,.55);
+      --muted:rgba(60,60,67,.45);
+      --radius:18px;
+
+      --w:390px;
+      --h:844px;
+
+      --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",
+             "PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;
+    }
+
+    body{
+      margin:0;
+      background:#111;
+      color:#fff;
+      font-family:var(--font);
+      display:flex;
+      gap:16px;
+      padding:16px;
+      justify-content:center;
+      align-items:flex-start;
+      flex-wrap:wrap;
+    }
+
+    .panel{
+      width:min(520px, 100%);
+      background:#1b1b1b;
+      border:1px solid #2a2a2a;
+      border-radius:14px;
+      padding:14px;
+    }
+    .panel h2{ margin:0 0 10px; font-size:16px; font-weight:600; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    label{ display:flex; flex-direction:column; gap:6px; font-size:12px; color:#cfcfcf; }
+    input{
+      height:38px; border-radius:10px; border:1px solid #333;
+      background:#0f0f0f; color:#fff; padding:0 10px; font-size:14px; outline:none;
+    }
+    .row{ grid-column:1/-1; }
+    button{
+      height:42px; border-radius:12px; border:1px solid #3a3a3a;
+      background:#fff; color:#000; font-weight:800; cursor:pointer;
+    }
+    .hint{
+      margin-top:8px;
+      color:#a9a9a9;
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .phone{
+      width:var(--w);
+      height:var(--h);
+      background:var(--bg);
+      border-radius:34px;
+      overflow:hidden;
+      box-shadow:0 12px 40px rgba(0,0,0,.45);
+      position:relative;
+    }
+
+    /* 顶部留白（代替状态栏高度） */
+    .topPad{
+      height:18px;
+      padding-top:env(safe-area-inset-top);
+      box-sizing:border-box;
+    }
+
+    .nav{
+      height:52px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      color:#000;
+      font-size:17px;
+      font-weight:800;
+    }
+    .back-btn{
+      position:absolute;
+      left:14px;
+      width:34px; height:34px;
+      border-radius:17px;
+      background:rgba(120,120,128,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#000;
+      font-size:20px;
+      line-height:1;
+    }
+
+    .content{
+      padding:10px 16px 18px;
+      box-sizing:border-box;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      overflow:hidden;
+      margin-bottom:12px;
+    }
+    .cell{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:16px 16px;
+      font-size:16px;
+      color:var(--text);
+      position:relative;
+    }
+    .cell + .cell::before{
+      content:"";
+      position:absolute;
+      top:0;
+      left:16px;
+      right:0;
+      height:1px;
+      background:var(--sep);
+    }
+    .value{
+      color:var(--value);
+      font-weight:500;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .chev{
+      color:rgba(60,60,67,.28);
+      font-size:18px;
+      transform:translateY(1px);
+    }
+    .warranty-right{
+      color:var(--value);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:500;
+      white-space:nowrap;
+    }
+    .warranty-right .label{ color:var(--muted); }
+  </style>
+</head>
+
+<body>
+  <div class="panel">
+    <h2>输入参数</h2>
+    <div class="grid">
+      <label>名称<input id="name" value="iPhone"></label>
+      <label>iOS 版本<input id="ios" value="26.2.1"></label>
+
+      <label class="row">型号名称<input id="modelName" value="iPhone 17 Pro"></label>
+      <label>型号<input id="model" value="MG934CH/A"></label>
+      <label class="row">序列号<input id="sn" value="MLJT2HWR2R"></label>
+
+      <label>歌曲<input id="songs" value="0"></label>
+      <label>视频<input id="videos" value="328"></label>
+
+      <label>照片<input id="photos" value="4,748"></label>
+      <label>应用程序<input id="apps" value="146"></label>
+
+      <label>总容量<input id="total" value="256 GB"></label>
+      <label>可用容量<input id="avail" value="23.53 GB"></label>
+
+      <label class="row">保修到期<input id="wexp" value="2026/9/18"></label>
+
+      <button class="row" id="download">导出 PNG</button>
+    </div>
+    <div class="hint">无状态栏版本：更适合做“展示图/示意图”。</div>
+  </div>
+
+  <div id="shot" class="phone">
+    <div class="topPad"></div>
+
+    <div class="nav">
+      <div class="back-btn">‹</div>
+      关于本机
+    </div>
+
+    <div class="content">
+      <div class="card">
+        <div class="cell">
+          <div>名称</div>
+          <div class="value"><span id="v_name">iPhone</span><span class="chev">›</span></div>
+        </div>
+        <div class="cell">
+          <div>iOS 版本</div>
+          <div class="value"><span id="v_ios">26.2.1</span><span class="chev">›</span></div>
+        </div>
+        <div class="cell">
+          <div>型号名称</div>
+          <div class="value"><span id="v_modelName">iPhone 17 Pro</span></div>
+        </div>
+        <div class="cell">
+          <div>型号</div>
+          <div class="value"><span id="v_model">MG934CH/A</span></div>
+        </div>
+        <div class="cell">
+          <div>序列号</div>
+          <div class="value"><span id="v_sn">MLJT2HWR2R"></span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cell">
+          <div style="font-weight:600;">有限保修</div>
+          <div class="warranty-right">
+            <span class="label">到期日期：</span>
+            <span id="v_wexp">2026/9/18</span>
+            <span class="chev">›</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cell"><div>歌曲</div><div class="value"><span id="v_songs">0</span></div></div>
+        <div class="cell"><div>视频</div><div class="value"><span id="v_videos">328</span></div></div>
+        <div class="cell"><div>照片</div><div class="value"><span id="v_photos">4,748</span></div></div>
+        <div class="cell"><div>应用程序</div><div class="value"><span id="v_apps">146</span></div></div>
+        <div class="cell"><div>总容量</div><div class="value"><span id="v_total">256 GB</span></div></div>
+        <div class="cell"><div>可用容量</div><div class="value"><span id="v_avail">23.53 GB</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const bind = (id, targetId) => {
+      const el = document.getElementById(id);
+      const target = document.getElementById(targetId);
+      const apply = () => target.textContent = el.value;
+      el.addEventListener('input', apply);
+      apply();
+    };
+
+    bind('name', 'v_name');
+    bind('ios', 'v_ios');
+    bind('modelName', 'v_modelName');
+    bind('model', 'v_model');
+    bind('sn', 'v_sn');
+    bind('songs', 'v_songs');
+    bind('videos', 'v_videos');
+    bind('photos', 'v_photos');
+    bind('apps', 'v_apps');
+    bind('total', 'v_total');
+    bind('avail', 'v_avail');
+    bind('wexp', 'v_wexp');
+
+    document.getElementById('download').addEventListener('click', async () => {
+      const node = document.getElementById('shot');
+      const canvas = await html2canvas(node, { scale: 3, backgroundColor: null });
+      const a = document.createElement('a');
+      a.download = 'about-device-no-statusbar.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+  </script>
+</body>
+</html>
