@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>关于本机 截图生成器（无状态栏）</title>
+  <title>关于本机 截图生成器（通用状态栏）</title>
   <style>
     :root{
       --bg:#f2f2f7;
@@ -34,6 +34,7 @@
       flex-wrap:wrap;
     }
 
+    /* 控制面板 */
     .panel{
       width:min(520px, 100%);
       background:#1b1b1b;
@@ -53,13 +54,9 @@
       height:42px; border-radius:12px; border:1px solid #3a3a3a;
       background:#fff; color:#000; font-weight:800; cursor:pointer;
     }
-    .hint{
-      margin-top:8px;
-      color:#a9a9a9;
-      font-size:12px;
-      line-height:1.5;
-    }
+    .hint{ margin-top:8px; color:#a9a9a9; font-size:12px; line-height:1.5; }
 
+    /* 画布区 */
     .phone{
       width:var(--w);
       height:var(--h);
@@ -70,13 +67,51 @@
       position:relative;
     }
 
-    /* 顶部留白（代替状态栏高度） */
-    .topPad{
-      height:18px;
+    /* 通用状态栏 */
+    .statusbar{
+      height:44px;
       padding-top:env(safe-area-inset-top);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      padding-left:20px;
+      padding-right:18px;
       box-sizing:border-box;
+      color:#000;
+      user-select:none;
+    }
+    .sb-left{
+      font-weight:700;
+      font-size:16px;
+      letter-spacing:0;
+      transform:translateY(1px);
+    }
+    .sb-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      transform:translateY(1px);
+    }
+    .sb-icon svg{ display:block; }
+
+    .battery{
+      position:relative;
+      width:52px;
+      height:18px;
+    }
+    .battery svg{ width:52px; height:18px; display:block; }
+    .bat-text{
+      position:absolute;
+      left:0; right:7px; top:0; bottom:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      font-weight:800;
+      color:#000;
     }
 
+    /* 导航（这里改细：标题不再粗） */
     .nav{
       height:52px;
       display:flex;
@@ -85,7 +120,8 @@
       position:relative;
       color:#000;
       font-size:17px;
-      font-weight:800;
+      font-weight:600;   /* 关键：从 800 改为 600 */
+      letter-spacing:0;
     }
     .back-btn{
       position:absolute;
@@ -99,12 +135,10 @@
       color:#000;
       font-size:20px;
       line-height:1;
+      font-weight:600;
     }
 
-    .content{
-      padding:10px 16px 18px;
-      box-sizing:border-box;
-    }
+    .content{ padding:10px 16px 18px; box-sizing:border-box; }
 
     .card{
       background:var(--card);
@@ -120,6 +154,7 @@
       font-size:16px;
       color:var(--text);
       position:relative;
+      font-weight:400;
     }
     .cell + .cell::before{
       content:"";
@@ -142,6 +177,12 @@
       color:rgba(60,60,67,.28);
       font-size:18px;
       transform:translateY(1px);
+      font-weight:500;
+    }
+
+    /* “有限保修”标题这里也改细 */
+    .w-title{
+      font-weight:600;   /* 关键：更接近图里，不要 800 */
     }
     .warranty-right{
       color:var(--value);
@@ -151,7 +192,7 @@
       font-weight:500;
       white-space:nowrap;
     }
-    .warranty-right .label{ color:var(--muted); }
+    .warranty-right .label{ color:var(--muted); font-weight:500; }
   </style>
 </head>
 
@@ -159,6 +200,12 @@
   <div class="panel">
     <h2>输入参数</h2>
     <div class="grid">
+      <label>时间<input id="t" value="00:19"></label>
+      <label>电量 %<input id="bat" value="69"></label>
+
+      <label>信号格数（0-4）<input id="sig" value="4"></label>
+      <label>Wi-Fi（0-3）<input id="wifi" value="3"></label>
+
       <label>名称<input id="name" value="iPhone"></label>
       <label>iOS 版本<input id="ios" value="26.2.1"></label>
 
@@ -179,11 +226,46 @@
 
       <button class="row" id="download">导出 PNG</button>
     </div>
-    <div class="hint">无状态栏版本：更适合做“展示图/示意图”。</div>
+    <div class="hint">导出后在 Safari 下载列表/文件App里保存到相册。</div>
   </div>
 
   <div id="shot" class="phone">
-    <div class="topPad"></div>
+    <!-- 通用状态栏 -->
+    <div class="statusbar">
+      <div class="sb-left" id="timeText">00:19</div>
+
+      <div class="sb-right">
+        <!-- signal bars -->
+        <span class="sb-icon" aria-hidden="true">
+          <svg width="22" height="14" viewBox="0 0 22 14">
+            <rect id="s1" x="1"  y="9" width="3" height="4" rx="1" fill="#000"/>
+            <rect id="s2" x="6"  y="7" width="3" height="6" rx="1" fill="#000"/>
+            <rect id="s3" x="11" y="5" width="3" height="8" rx="1" fill="#000"/>
+            <rect id="s4" x="16" y="3" width="3" height="10" rx="1" fill="#000"/>
+          </svg>
+        </span>
+
+        <!-- wifi -->
+        <span class="sb-icon" aria-hidden="true">
+          <svg width="20" height="14" viewBox="0 0 20 14">
+            <path id="w1" d="M2 5.6C6.9 1.4 13.1 1.4 18 5.6" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+            <path id="w2" d="M4.8 8.1C8 5.6 12 5.6 15.2 8.1" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+            <path id="w3" d="M7.8 10.4C9.2 9.4 10.8 9.4 12.2 10.4" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+            <circle id="w0" cx="10" cy="12.2" r="1.2" fill="#000"/>
+          </svg>
+        </span>
+
+        <!-- battery -->
+        <div class="battery" aria-hidden="true">
+          <svg viewBox="0 0 52 18">
+            <rect x="1" y="2" width="42" height="14" rx="5" fill="none" stroke="#000" stroke-width="1.6"/>
+            <rect x="44.8" y="6" width="5" height="6" rx="2.6" fill="#000"/>
+            <rect id="batFill" x="3" y="4" width="0" height="10" rx="4" fill="#000" opacity="0.22"/>
+          </svg>
+          <div class="bat-text"><span id="batText">69</span></div>
+        </div>
+      </div>
+    </div>
 
     <div class="nav">
       <div class="back-btn">‹</div>
@@ -210,13 +292,13 @@
         </div>
         <div class="cell">
           <div>序列号</div>
-          <div class="value"><span id="v_sn">MLJT2HWR2R"></span></div>
+          <div class="value"><span id="v_sn">MLJT2HWR2R</span></div>
         </div>
       </div>
 
       <div class="card">
         <div class="cell">
-          <div style="font-weight:600;">有限保修</div>
+          <div class="w-title">有限保修</div>
           <div class="warranty-right">
             <span class="label">到期日期：</span>
             <span id="v_wexp">2026/9/18</span>
@@ -246,6 +328,7 @@
       apply();
     };
 
+    bind('t', 'timeText');
     bind('name', 'v_name');
     bind('ios', 'v_ios');
     bind('modelName', 'v_modelName');
@@ -259,11 +342,68 @@
     bind('avail', 'v_avail');
     bind('wexp', 'v_wexp');
 
+    const batInput = document.getElementById('bat');
+    const batText = document.getElementById('batText');
+    const batFill = document.getElementById('batFill');
+
+    const sigInput = document.getElementById('sig');
+    const wifiInput = document.getElementById('wifi');
+
+    const sigBars = [
+      document.getElementById('s1'),
+      document.getElementById('s2'),
+      document.getElementById('s3'),
+      document.getElementById('s4')
+    ];
+    const wifiParts = [
+      document.getElementById('w0'),
+      document.getElementById('w1'),
+      document.getElementById('w2'),
+      document.getElementById('w3')
+    ];
+
+    function applyBattery(){
+      let v = parseInt(String(batInput.value).replace(/[^\d]/g,''), 10);
+      if (isNaN(v)) v = 0;
+      v = Math.max(0, Math.min(100, v));
+      batText.textContent = String(v);
+      const innerMax = 38;
+      const w = Math.round(innerMax * (v/100));
+      batFill.setAttribute('width', String(w));
+      batFill.setAttribute('opacity', v >= 20 ? '0.22' : '0.32');
+    }
+
+    function applySignal(){
+      let v = parseInt(String(sigInput.value).replace(/[^\d]/g,''), 10);
+      if (isNaN(v)) v = 0;
+      v = Math.max(0, Math.min(4, v));
+      sigBars.forEach((bar, idx)=>{
+        bar.setAttribute('opacity', idx < v ? '1' : '0.18');
+      });
+    }
+
+    function applyWifi(){
+      let v = parseInt(String(wifiInput.value).replace(/[^\d]/g,''), 10);
+      if (isNaN(v)) v = 0;
+      v = Math.max(0, Math.min(3, v));
+      wifiParts.forEach(p=>p.setAttribute('opacity','0.18'));
+      if (v === 0) return;
+      wifiParts[0].setAttribute('opacity','1');
+      wifiParts[1].setAttribute('opacity', v>=1 ? '1' : '0.18');
+      wifiParts[2].setAttribute('opacity', v>=2 ? '1' : '0.18');
+      wifiParts[3].setAttribute('opacity', v>=3 ? '1' : '0.18');
+    }
+
+    batInput.addEventListener('input', applyBattery);
+    sigInput.addEventListener('input', applySignal);
+    wifiInput.addEventListener('input', applyWifi);
+    applyBattery(); applySignal(); applyWifi();
+
     document.getElementById('download').addEventListener('click', async () => {
       const node = document.getElementById('shot');
       const canvas = await html2canvas(node, { scale: 3, backgroundColor: null });
       const a = document.createElement('a');
-      a.download = 'about-device-no-statusbar.png';
+      a.download = 'about-device.png';
       a.href = canvas.toDataURL('image/png');
       a.click();
     });
