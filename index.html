@@ -1,164 +1,433 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>关于本机 生成器</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>关于本机 生成器</title>
+  <style>
+    :root{
+      --w:390px;
+      --h:844px;
 
-<style>
-:root{
-  --w:390px;
-  --h:844px;
-  --bg:#f2f2f7;
-  --card:#fff;
-  --sep:rgba(60,60,67,.12);
-  --text:#1c1c1e;
-  --value:rgba(60,60,67,.55);
-  --radius:18px;
-  --font:-apple-system,BlinkMacSystemFont,"PingFang SC","SF Pro Text",sans-serif;
-}
+      --bg:#f2f2f7;
+      --card:#ffffff;
+      --sep:rgba(60,60,67,.12);
+      --text:#1c1c1e;
+      --value:rgba(60,60,67,.55);
+      --muted:rgba(60,60,67,.45);
+      --radius:18px;
 
-body{
-  margin:0;
-  background:#111;
-  font-family:var(--font);
-  display:flex;
-  justify-content:center;
-  padding:20px;
-}
+      --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",
+             "PingFang SC","Hiragino Sans GB","Microsoft YaHei",Arial,sans-serif;
+    }
 
-/* ===== 固定截图容器 ===== */
-#shot{
-  width:var(--w);
-  height:var(--h);
-  background:var(--bg);
-  border-radius:32px;
-  overflow:hidden;
-  position:relative;
-}
+    body{
+      margin:0;
+      background:#111;
+      color:#fff;
+      font-family:var(--font);
+      padding:14px;
+      display:flex;
+      justify-content:center;
+    }
 
-/* ===== 通用状态栏 ===== */
-.statusbar{
-  height:44px;
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  padding:0 18px 6px;
-  font-size:16px;
-  font-weight:600;
-}
+    /* 手机优先：面板在上，预览在下；大屏左右 */
+    .wrap{
+      width:min(980px, 100%);
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (min-width: 980px){
+      .wrap{ grid-template-columns: 420px 1fr; }
+    }
 
-.icons{display:flex;gap:8px;font-size:14px}
+    .panel{
+      background:#1b1b1b;
+      border:1px solid #2a2a2a;
+      border-radius:14px;
+      padding:14px;
+    }
+    .panel h2{ margin:0 0 10px; font-size:16px; font-weight:700; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    label{ display:flex; flex-direction:column; gap:6px; font-size:12px; color:#cfcfcf; }
+    input{
+      height:38px; border-radius:10px; border:1px solid #333;
+      background:#0f0f0f; color:#fff; padding:0 10px; font-size:14px; outline:none;
+    }
+    .row{ grid-column:1/-1; }
+    .btn{
+      height:42px; border-radius:12px; border:1px solid #3a3a3a;
+      background:#fff; color:#000; font-weight:900; cursor:pointer;
+    }
+    .hint{ margin-top:8px; color:#a9a9a9; font-size:12px; line-height:1.5; }
 
-/* ===== 标题 ===== */
-.nav{
-  height:52px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:17px;
-  font-weight:600;
-  position:relative;
-}
+    .stage{
+      background:#1b1b1b;
+      border:1px solid #2a2a2a;
+      border-radius:14px;
+      padding:14px;
+    }
+    .preview{
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      padding:6px;
+    }
 
-.back{
-  position:absolute;
-  left:14px;
-  width:34px;height:34px;
-  border-radius:17px;
-  background:rgba(120,120,128,.12);
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;
-}
+    /* 固定预览尺寸：不会被撑长 */
+    #shot{
+      width:var(--w);
+      height:var(--h);
+      background:var(--bg);
+      border-radius:34px;
+      overflow:hidden;
+      box-shadow:0 12px 40px rgba(0,0,0,.45);
+      position:relative;
+      flex:0 0 auto;
+    }
 
-/* ===== 内容 ===== */
-.content{padding:10px 16px;}
+    /* 顶部留白更贴近图里（状态栏区域背景） */
+    .topArea{
+      background:var(--bg);
+    }
 
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  overflow:hidden;
-  margin-bottom:12px;
-}
+    /* 通用状态栏（不追求 iOS 一模一样） */
+    .statusbar{
+      height:44px;
+      padding-top:env(safe-area-inset-top);
+      box-sizing:border-box;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      padding-left:20px;
+      padding-right:18px;
+      color:#000;
+      user-select:none;
+    }
+    .sb-left{
+      font-size:16px;
+      font-weight:600;
+      letter-spacing:0;
+      transform:translateY(1px);
+    }
+    .sb-right{ display:flex; align-items:center; gap:10px; transform:translateY(1px); }
 
-.cell{
-  padding:16px;
-  display:flex;
-  justify-content:space-between;
-  font-size:16px;
-}
+    .battery{
+      position:relative;
+      width:52px; height:18px;
+    }
+    .battery svg{ width:52px; height:18px; display:block; }
+    .bat-text{
+      position:absolute;
+      left:0; right:7px; top:0; bottom:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:11px; font-weight:800; color:#000;
+    }
 
-.cell+.cell{
-  border-top:1px solid var(--sep);
-}
+    /* 导航栏：高度/字重调整（你说的“有点粗”就是这里） */
+    .nav{
+      height:44px;                 /* 关键：更接近图里的紧凑高度 */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      color:#000;
+      font-size:17px;
+      font-weight:600;             /* 关键：不再 800 */
+      letter-spacing:0;
+    }
+    .back-btn{
+      position:absolute;
+      left:14px;
+      width:34px; height:34px;
+      border-radius:17px;
+      background:rgba(120,120,128,.12);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#000;
+      font-size:20px;
+      line-height:1;
+      font-weight:600;
+    }
 
-.value{color:var(--value)}
-</style>
+    /* 内容区：间距更接近 */
+    .content{
+      padding:12px 16px 18px;      /* 顶部稍微加一点，接近图里卡片距离 */
+      box-sizing:border-box;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      overflow:hidden;
+      margin-bottom:14px;          /* 卡片间距略增 */
+    }
+
+    /* cell 行高/字重/字号（更贴近 Settings） */
+    .cell{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:18px 16px;           /* 关键：行高更接近你图里的“高” */
+      font-size:17px;              /* 关键：更接近系统文本尺寸 */
+      color:var(--text);
+      position:relative;
+      font-weight:400;
+    }
+    .cell + .cell::before{
+      content:"";
+      position:absolute;
+      top:0;
+      left:16px;
+      right:0;
+      height:1px;
+      background:var(--sep);
+    }
+
+    .value{
+      color:var(--value);
+      font-weight:400;             /* 关键：值不要偏粗 */
+      display:flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .chev{
+      color:rgba(60,60,67,.28);
+      font-size:18px;
+      transform:translateY(1px);
+      font-weight:500;
+    }
+
+    /* 有限保修：左侧不要太粗 */
+    .w-title{ font-weight:600; }   /* 从更粗改为 600 */
+    .warranty-right{
+      color:var(--value);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:400;
+      white-space:nowrap;
+    }
+    .warranty-right .label{ color:var(--muted); font-weight:400; }
+  </style>
 </head>
 
 <body>
+  <div class="wrap">
 
-<div id="shot">
+    <div class="panel">
+      <h2>编辑参数</h2>
+      <div class="grid">
+        <label>时间<input id="t" value="00:19"></label>
+        <label>电量 %<input id="bat" value="69"></label>
 
-<div class="statusbar">
-  <div id="time">00:19</div>
-  <div class="icons">▮▮▮ Wi-Fi 🔋69%</div>
-</div>
+        <label>信号格数（0-4）<input id="sig" value="4"></label>
+        <label>Wi-Fi（0-3）<input id="wifi" value="3"></label>
 
-<div class="nav">
-  <div class="back">‹</div>
-  关于本机
-</div>
+        <label>名称<input id="name" value="iPhone"></label>
+        <label>iOS 版本<input id="ios" value="26.2.1"></label>
 
-<div class="content">
-  <div class="card">
-    <div class="cell"><span>名称</span><span class="value">iPhone</span></div>
-    <div class="cell"><span>iOS 版本</span><span class="value">26.2.1</span></div>
-    <div class="cell"><span>型号名称</span><span class="value">iPhone 17 Pro</span></div>
-    <div class="cell"><span>型号</span><span class="value">MG934CH/A</span></div>
-    <div class="cell"><span>序列号</span><span class="value">MLJT2HWR2R</span></div>
+        <label class="row">型号名称<input id="modelName" value="iPhone 17 Pro"></label>
+        <label>型号<input id="model" value="MG934CH/A"></label>
+        <label class="row">序列号<input id="sn" value="MLJT2HWR2R"></label>
+
+        <label>歌曲<input id="songs" value="0"></label>
+        <label>视频<input id="videos" value="328"></label>
+
+        <label>照片<input id="photos" value="4,748"></label>
+        <label>应用程序<input id="apps" value="146"></label>
+
+        <label>总容量<input id="total" value="256 GB"></label>
+        <label>可用容量<input id="avail" value="23.53 GB"></label>
+
+        <label class="row">保修到期<input id="wexp" value="2026/9/18"></label>
+
+        <button class="btn row" id="download">导出 PNG</button>
+      </div>
+      <div class="hint">导出固定 390×844（@3x 输出 1170×2532），不会变长。</div>
+    </div>
+
+    <div class="stage">
+      <div class="preview">
+        <div id="shot">
+          <div class="topArea">
+            <div class="statusbar">
+              <div class="sb-left" id="timeText">00:19</div>
+
+              <div class="sb-right">
+                <span aria-hidden="true">
+                  <svg width="22" height="14" viewBox="0 0 22 14">
+                    <rect id="s1" x="1"  y="9" width="3" height="4" rx="1" fill="#000"/>
+                    <rect id="s2" x="6"  y="7" width="3" height="6" rx="1" fill="#000"/>
+                    <rect id="s3" x="11" y="5" width="3" height="8" rx="1" fill="#000"/>
+                    <rect id="s4" x="16" y="3" width="3" height="10" rx="1" fill="#000"/>
+                  </svg>
+                </span>
+
+                <span aria-hidden="true">
+                  <svg width="20" height="14" viewBox="0 0 20 14">
+                    <path id="w1" d="M2 5.6C6.9 1.4 13.1 1.4 18 5.6" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+                    <path id="w2" d="M4.8 8.1C8 5.6 12 5.6 15.2 8.1" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+                    <path id="w3" d="M7.8 10.4C9.2 9.4 10.8 9.4 12.2 10.4" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round"/>
+                    <circle id="w0" cx="10" cy="12.2" r="1.2" fill="#000"/>
+                  </svg>
+                </span>
+
+                <div class="battery" aria-hidden="true">
+                  <svg viewBox="0 0 52 18">
+                    <rect x="1" y="2" width="42" height="14" rx="5" fill="none" stroke="#000" stroke-width="1.6"/>
+                    <rect x="44.8" y="6" width="5" height="6" rx="2.6" fill="#000"/>
+                    <rect id="batFill" x="3" y="4" width="0" height="10" rx="4" fill="#000" opacity="0.22"/>
+                  </svg>
+                  <div class="bat-text"><span id="batText">69</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="nav">
+              <div class="back-btn">‹</div>
+              关于本机
+            </div>
+          </div>
+
+          <div class="content">
+            <div class="card">
+              <div class="cell">
+                <div>名称</div>
+                <div class="value"><span id="v_name">iPhone</span><span class="chev">›</span></div>
+              </div>
+              <div class="cell">
+                <div>iOS 版本</div>
+                <div class="value"><span id="v_ios">26.2.1</span><span class="chev">›</span></div>
+              </div>
+              <div class="cell">
+                <div>型号名称</div>
+                <div class="value"><span id="v_modelName">iPhone 17 Pro</span></div>
+              </div>
+              <div class="cell">
+                <div>型号</div>
+                <div class="value"><span id="v_model">MG934CH/A</span></div>
+              </div>
+              <div class="cell">
+                <div>序列号</div>
+                <div class="value"><span id="v_sn">MLJT2HWR2R</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="cell">
+                <div class="w-title">有限保修</div>
+                <div class="warranty-right">
+                  <span class="label">到期日期：</span>
+                  <span id="v_wexp">2026/9/18</span>
+                  <span class="chev">›</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="cell"><div>歌曲</div><div class="value"><span id="v_songs">0</span></div></div>
+              <div class="cell"><div>视频</div><div class="value"><span id="v_videos">328</span></div></div>
+              <div class="cell"><div>照片</div><div class="value"><span id="v_photos">4,748</span></div></div>
+              <div class="cell"><div>应用程序</div><div class="value"><span id="v_apps">146</span></div></div>
+              <div class="cell"><div>总容量</div><div class="value"><span id="v_total">256 GB</span></div></div>
+              <div class="cell"><div>可用容量</div><div class="value"><span id="v_avail">23.53 GB</span></div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="card">
-    <div class="cell"><span style="font-weight:600">有限保修</span>
-      <span class="value">到期日期：2026/9/18</span></div>
-  </div>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const bind = (id, targetId) => {
+      const el = document.getElementById(id);
+      const target = document.getElementById(targetId);
+      const apply = () => target.textContent = el.value;
+      el.addEventListener('input', apply);
+      apply();
+    };
 
-  <div class="card">
-    <div class="cell"><span>歌曲</span><span class="value">0</span></div>
-    <div class="cell"><span>视频</span><span class="value">328</span></div>
-    <div class="cell"><span>照片</span><span class="value">4,748</span></div>
-    <div class="cell"><span>应用程序</span><span class="value">146</span></div>
-    <div class="cell"><span>总容量</span><span class="value">256 GB</span></div>
-    <div class="cell"><span>可用容量</span><span class="value">23.53 GB</span></div>
-  </div>
-</div>
+    bind('t', 'timeText');
+    bind('name', 'v_name');
+    bind('ios', 'v_ios');
+    bind('modelName', 'v_modelName');
+    bind('model', 'v_model');
+    bind('sn', 'v_sn');
+    bind('songs', 'v_songs');
+    bind('videos', 'v_videos');
+    bind('photos', 'v_photos');
+    bind('apps', 'v_apps');
+    bind('total', 'v_total');
+    bind('avail', 'v_avail');
+    bind('wexp', 'v_wexp');
 
-</div>
+    const batInput = document.getElementById('bat');
+    const batText = document.getElementById('batText');
+    const batFill = document.getElementById('batFill');
 
-<br>
+    const sigInput = document.getElementById('sig');
+    const wifiInput = document.getElementById('wifi');
 
-<button id="download">导出 PNG</button>
+    const sigBars = [s1,s2,s3,s4];
+    const wifiParts = [w0,w1,w2,w3];
 
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    function applyBattery(){
+      let v = parseInt(String(batInput.value).replace(/[^\d]/g,''), 10);
+      if (isNaN(v)) v = 0;
+      v = Math.max(0, Math.min(100, v));
+      batText.textContent = String(v);
+      const innerMax = 38;
+      const w = Math.round(innerMax * (v/100));
+      batFill.setAttribute('width', String(w));
+      batFill.setAttribute('opacity', v >= 20 ? '0.22' : '0.32');
+    }
+    function applySignal(){
+      let v = parseInt(String(sigInput.value).replace(/[^\d]/g,''), 10);
+      if (isNaN(v)) v = 0;
+      v = Math.max(0, Math.min(4, v));
+      sigBars.forEach((bar, idx)=> bar.setAttribute('opacity', idx < v ? '1' : '0.18'));
+    }
+    function applyWifi(){
+      let v = parseInt(String(wifiInput.value).replace(/[^\d]/g,''), 10);
+      if (isNaN(v)) v = 0;
+      v = Math.max(0, Math.min(3, v));
+      wifiParts.forEach(p=>p.setAttribute('opacity','0.18'));
+      if (v === 0) return;
+      w0.setAttribute('opacity','1');
+      w1.setAttribute('opacity', v>=1 ? '1' : '0.18');
+      w2.setAttribute('opacity', v>=2 ? '1' : '0.18');
+      w3.setAttribute('opacity', v>=3 ? '1' : '0.18');
+    }
 
-<script>
-document.getElementById("download").onclick = async () => {
-  const node = document.getElementById("shot");
+    batInput.addEventListener('input', applyBattery);
+    sigInput.addEventListener('input', applySignal);
+    wifiInput.addEventListener('input', applyWifi);
+    applyBattery(); applySignal(); applyWifi();
 
-  const canvas = await html2canvas(node,{
-    width:390,
-    height:844,
-    scale:3,
-    useCORS:true
-  });
-
-  const link=document.createElement("a");
-  link.download="about-device.png";
-  link.href=canvas.toDataURL("image/png");
-  link.click();
-};
-</script>
-
+    // 导出固定尺寸：不会变长
+    document.getElementById('download').addEventListener('click', async () => {
+      const node = document.getElementById('shot');
+      const canvas = await html2canvas(node, {
+        scale: 3,
+        backgroundColor: null,
+        width: 390,
+        height: 844,
+        windowWidth: 390,
+        windowHeight: 844
+      });
+      const a = document.createElement('a');
+      a.download = 'about-device.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+  </script>
 </body>
 </html>
